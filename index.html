@@ -1,0 +1,902 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>省很大</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root {
+    --primary: #f97316; --primary-dark: #ea580c; --danger: #ef4444;
+    --warning: #f59e0b; --success: #10b981; --purple: #8b5cf6;
+    --gray-50: #f9fafb; --gray-100: #f3f4f6; --gray-200: #e5e7eb;
+    --gray-400: #9ca3af; --gray-600: #4b5563; --gray-800: #1f2937;
+    --radius: 12px; --shadow: 0 2px 8px rgba(0,0,0,0.08);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--gray-50); color: var(--gray-800); min-height: 100vh; }
+
+  .auth-screen { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; background: linear-gradient(135deg, #f97316 0%, #ef4444 100%); }
+  .auth-box { background: white; border-radius: 20px; padding: 36px 32px; width: 100%; max-width: 400px; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
+  .auth-logo { text-align: center; font-size: 48px; margin-bottom: 8px; }
+  .auth-title { text-align: center; font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+  .auth-subtitle { text-align: center; color: var(--gray-600); font-size: 14px; margin-bottom: 28px; }
+  .auth-tabs { display: flex; background: var(--gray-100); border-radius: 10px; padding: 4px; margin-bottom: 24px; }
+  .auth-tab { flex: 1; padding: 8px; text-align: center; border: none; background: none; cursor: pointer; border-radius: 8px; font-size: 14px; font-weight: 600; color: var(--gray-600); transition: all .2s; }
+  .auth-tab.active { background: white; color: var(--primary); box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
+  .auth-error { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; border-radius: 8px; padding: 10px 14px; font-size: 13px; margin-bottom: 14px; }
+  .auth-success { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; border-radius: 8px; padding: 10px 14px; font-size: 13px; margin-bottom: 14px; }
+
+  .household-screen { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; background: var(--gray-50); }
+  .household-box { background: white; border-radius: 20px; padding: 32px; width: 100%; max-width: 420px; box-shadow: var(--shadow); }
+
+  .loading-screen { min-height: 100vh; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 16px; }
+  .spinner { width: 40px; height: 40px; border: 3px solid var(--gray-200); border-top-color: var(--primary); border-radius: 50%; animation: spin .8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  header { background: white; border-bottom: 1px solid var(--gray-200); padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; box-shadow: var(--shadow); }
+  .header-left { display: flex; align-items: center; gap: 10px; }
+  header h1 { font-size: 18px; font-weight: 700; color: var(--primary); }
+  .household-badge { font-size: 12px; background: #fff7ed; color: var(--primary); padding: 3px 10px; border-radius: 99px; font-weight: 600; }
+  .btn-signout { background: none; border: none; cursor: pointer; color: var(--gray-400); font-size: 18px; padding: 4px 8px; border-radius: 8px; }
+
+  nav { background: white; border-bottom: 1px solid var(--gray-200); display: flex; overflow-x: auto; }
+  nav button { flex: 1; min-width: 70px; padding: 12px 8px; background: none; border: none; border-bottom: 3px solid transparent; cursor: pointer; font-size: 13px; color: var(--gray-600); transition: all .2s; white-space: nowrap; }
+  nav button.active { color: var(--primary); border-bottom-color: var(--primary); font-weight: 600; }
+
+  main { padding: 20px; max-width: 700px; margin: 0 auto; }
+  .section { display: none; }
+  .section.active { display: block; }
+
+  .card { background: white; border-radius: var(--radius); box-shadow: var(--shadow); padding: 20px; margin-bottom: 16px; }
+  .card-title { font-size: 15px; font-weight: 600; color: var(--gray-600); margin-bottom: 12px; }
+
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 16px; }
+  .stat { background: white; border-radius: var(--radius); box-shadow: var(--shadow); padding: 16px 12px; text-align: center; }
+  .stat-num { font-size: 32px; font-weight: 700; }
+  .stat-label { font-size: 12px; color: var(--gray-600); margin-top: 4px; }
+  .stat.danger .stat-num { color: var(--danger); }
+  .stat.success .stat-num { color: var(--success); }
+  .stat.ok .stat-num { color: var(--primary); }
+
+  .coupon-card { background: white; border-radius: var(--radius); box-shadow: var(--shadow); padding: 14px; margin-bottom: 10px; border-left: 4px solid var(--gray-200); }
+  .coupon-card.s-active { border-left-color: var(--primary); }
+  .coupon-card.s-expiring { border-left-color: var(--warning); }
+  .coupon-card.s-expired { border-left-color: var(--danger); }
+  .coupon-card.s-used { border-left-color: var(--gray-400); opacity: 0.6; }
+  .coupon-card.s-redeemable { border-left-color: var(--success); }
+
+  .coupon-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 6px; }
+  .coupon-store { font-weight: 700; font-size: 16px; }
+  .coupon-actions { display: flex; gap: 6px; flex-shrink: 0; }
+  .coupon-discount { font-size: 20px; font-weight: 800; color: var(--danger); margin: 4px 0 8px; }
+  .coupon-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
+
+  .tag { font-size: 11px; padding: 2px 8px; border-radius: 99px; }
+  .tag-coupon { background: #fef3c7; color: #92400e; }
+  .tag-stamp { background: #ede9fe; color: #5b21b6; }
+  .tag-cat { background: #eff6ff; color: #1d4ed8; }
+  .tag-used { background: var(--gray-100); color: var(--gray-400); }
+  .tag-ok { background: #f0fdf4; color: #166534; font-weight: 700; }
+
+  .eb { font-size: 12px; font-weight: 600; margin-top: 4px; }
+  .eb-active { color: var(--success); }
+  .eb-expiring { color: var(--warning); }
+  .eb-expired { color: var(--danger); }
+  .eb-used { color: var(--gray-400); }
+  .eb-none { color: var(--gray-400); }
+
+  .stamp-bar-bg { background: var(--gray-100); border-radius: 99px; height: 10px; overflow: hidden; margin: 6px 0 4px; }
+  .stamp-bar-fill { height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--purple), #a78bfa); transition: width .3s; }
+  .stamp-counts { display: flex; justify-content: space-between; font-size: 12px; color: var(--gray-600); }
+  .stamp-reward { font-size: 12px; color: var(--purple); font-weight: 600; margin-top: 4px; }
+
+  .btn-row { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; align-items: center; }
+  .btn-mini { font-size: 12px; font-weight: 600; border-radius: 99px; padding: 5px 14px; cursor: pointer; border: 1px solid; line-height: 1; }
+  .btn-mini-used { color: var(--success); background: #f0fdf4; border-color: #bbf7d0; }
+  .btn-mini-stamp { color: var(--purple); background: #f5f3ff; border-color: #ddd6fe; }
+  .btn-mini-redeem { color: white; background: var(--success); border-color: var(--success); }
+
+  .btn-icon { background: var(--gray-100); border: none; border-radius: 8px; width: 32px; height: 32px; cursor: pointer; font-size: 15px; display: inline-flex; align-items: center; justify-content: center; }
+  .btn-icon:hover { background: var(--gray-200); }
+  .btn-icon.del:hover { background: #fee2e2; }
+
+  .filter-bar { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+  .filter-bar input, .filter-bar select { flex: 1; min-width: 120px; padding: 10px 12px; border: 1px solid var(--gray-200); border-radius: 10px; font-size: 14px; background: white; outline: none; }
+  .filter-bar input:focus, .filter-bar select:focus { border-color: var(--primary); }
+
+  .type-toggle { display: flex; background: var(--gray-100); border-radius: 10px; padding: 4px; margin-bottom: 20px; }
+  .type-btn { flex: 1; padding: 10px; text-align: center; border: none; background: none; cursor: pointer; border-radius: 8px; font-size: 14px; font-weight: 600; color: var(--gray-600); transition: all .2s; }
+  .type-btn.active { background: white; color: var(--primary); box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
+
+  .form-group { margin-bottom: 16px; }
+  label { display: block; font-size: 13px; font-weight: 600; color: var(--gray-600); margin-bottom: 6px; }
+  input[type="text"], input[type="email"], input[type="password"], input[type="number"], input[type="date"], select, textarea {
+    width: 100%; padding: 11px 14px; border: 1px solid var(--gray-200); border-radius: 10px;
+    font-size: 15px; outline: none; transition: border-color .2s; background: white; font-family: inherit;
+  }
+  textarea { resize: vertical; min-height: 80px; }
+  input:focus, select:focus, textarea:focus { border-color: var(--primary); }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+  .btn { padding: 12px 20px; border: none; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; transition: all .15s; }
+  .btn-primary { background: var(--primary); color: white; }
+  .btn-primary:hover { background: var(--primary-dark); }
+  .btn-secondary { background: var(--gray-100); color: var(--gray-800); }
+  .btn-secondary:hover { background: var(--gray-200); }
+  .btn-block { width: 100%; }
+  .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+  .divider { display: flex; align-items: center; gap: 12px; margin: 20px 0; color: var(--gray-400); font-size: 13px; }
+  .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--gray-200); }
+
+  .invite-code-box { background: var(--gray-50); border: 2px dashed var(--gray-200); border-radius: 12px; padding: 20px; text-align: center; }
+  .invite-code { font-size: 36px; font-weight: 900; letter-spacing: 8px; color: var(--primary); font-family: monospace; }
+
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; align-items: center; justify-content: center; padding: 20px; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: white; border-radius: 16px; padding: 24px; width: 100%; max-width: 480px; max-height: 90vh; overflow-y: auto; }
+  .modal h2 { font-size: 18px; font-weight: 700; margin-bottom: 20px; }
+  .modal-footer { display: flex; gap: 10px; margin-top: 20px; }
+
+  .alert { border-radius: 10px; padding: 12px 16px; margin-bottom: 12px; font-size: 14px; font-weight: 500; }
+  .alert.warning { background: #fffbeb; color: #92400e; border: 1px solid #fde68a; }
+  .alert.danger { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+  .alert.success { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
+
+  .empty { text-align: center; padding: 40px 20px; color: var(--gray-400); }
+  .empty-icon { font-size: 48px; margin-bottom: 12px; }
+  .conditions-text { font-size: 12px; color: var(--gray-400); margin-top: 4px; line-height: 1.6; }
+  .member-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--gray-100); }
+  .member-avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; flex-shrink: 0; }
+</style>
+</head>
+<body>
+
+<div id="loading-screen" class="loading-screen">
+  <div class="spinner"></div>
+  <p style="color:var(--gray-400)">載入中...</p>
+</div>
+
+<div id="auth-screen" class="auth-screen" style="display:none">
+  <div class="auth-box">
+    <div class="auth-logo">🎟️</div>
+    <div class="auth-title">省很大</div>
+    <div class="auth-subtitle">管理折價券與集點卡，不再過期浪費</div>
+    <div class="auth-tabs">
+      <button class="auth-tab active" onclick="switchAuthTab('login')">登入</button>
+      <button class="auth-tab" onclick="switchAuthTab('signup')">註冊</button>
+    </div>
+    <div id="auth-message"></div>
+    <div class="form-group">
+      <label>電子信箱</label>
+      <input type="email" id="auth-email" placeholder="your@email.com" onkeydown="if(event.key==='Enter')handleAuth()">
+    </div>
+    <div class="form-group">
+      <label>密碼</label>
+      <input type="password" id="auth-password" placeholder="至少 6 個字元" onkeydown="if(event.key==='Enter')handleAuth()">
+    </div>
+    <button class="btn btn-primary btn-block" id="auth-btn" onclick="handleAuth()">登入</button>
+  </div>
+</div>
+
+<div id="household-screen" class="household-screen" style="display:none">
+  <div class="household-box">
+    <div style="font-size:40px;text-align:center;margin-bottom:12px">🏡</div>
+    <h2 style="text-align:center;margin-bottom:6px">建立你的家庭空間</h2>
+    <p style="text-align:center;color:var(--gray-600);font-size:14px;margin-bottom:28px">建立新家庭，或輸入邀請碼加入</p>
+    <div id="household-message"></div>
+    <div class="form-group">
+      <label>建立新家庭</label>
+      <input type="text" id="household-name" placeholder="例：我家、Ivy 的家">
+    </div>
+    <button class="btn btn-primary btn-block" onclick="createHousehold()">建立家庭</button>
+    <div class="divider">或</div>
+    <div class="form-group">
+      <label>加入現有家庭（輸入邀請碼）</label>
+      <input type="text" id="invite-input" placeholder="6 位邀請碼" style="text-transform:uppercase;letter-spacing:4px;font-size:18px;font-weight:700;text-align:center">
+    </div>
+    <button class="btn btn-secondary btn-block" onclick="joinHousehold()">加入家庭</button>
+    <div style="margin-top:16px;text-align:center">
+      <button onclick="signOut()" style="background:none;border:none;color:var(--gray-400);cursor:pointer;font-size:13px">登出</button>
+    </div>
+  </div>
+</div>
+
+<div id="app" style="display:none">
+  <header>
+    <div class="header-left">
+      <h1>🎟️ 省很大</h1>
+      <span class="household-badge" id="household-name-badge">我家</span>
+    </div>
+    <button class="btn-signout" onclick="signOut()">🚪</button>
+  </header>
+  <nav>
+    <button class="active" onclick="showSection('dashboard',this)">📊 總覽</button>
+    <button onclick="showSection('list',this)">📋 全部</button>
+    <button onclick="showSection('add',this)">➕ 新增</button>
+    <button onclick="showSection('settings',this)">⚙️ 設定</button>
+  </nav>
+  <main>
+
+    <!-- 總覽 -->
+    <div id="section-dashboard" class="section active">
+      <div class="stats">
+        <div class="stat danger">
+          <div class="stat-num" id="stat-expiring">0</div>
+          <div class="stat-label">7天內到期</div>
+        </div>
+        <div class="stat success">
+          <div class="stat-num" id="stat-redeemable">0</div>
+          <div class="stat-label">集點達標</div>
+        </div>
+        <div class="stat ok">
+          <div class="stat-num" id="stat-total">0</div>
+          <div class="stat-label">有效優惠</div>
+        </div>
+      </div>
+      <div id="dashboard-alerts"></div>
+      <div class="card">
+        <div class="card-title">⏰ 即將到期（7天內）</div>
+        <div id="urgent-list"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">🎯 集點卡進度</div>
+        <div id="stamp-list"></div>
+      </div>
+    </div>
+
+    <!-- 全部 -->
+    <div id="section-list" class="section">
+      <div class="filter-bar">
+        <input type="text" id="search-input" placeholder="🔍 搜尋店家..." oninput="renderList()">
+        <select id="filter-type" onchange="renderList()">
+          <option value="">全部類型</option>
+          <option value="coupon">🎫 折價券</option>
+          <option value="stamp_card">🎯 集點卡</option>
+        </select>
+        <select id="filter-cat" onchange="renderList()">
+          <option value="">全部分類</option>
+        </select>
+        <select id="filter-status" onchange="renderList()">
+          <option value="active">有效</option>
+          <option value="">全部</option>
+          <option value="used">已使用</option>
+          <option value="expired_only">已過期</option>
+        </select>
+      </div>
+      <div id="list-container"></div>
+    </div>
+
+    <!-- 新增 -->
+    <div id="section-add" class="section">
+      <div class="card">
+        <div class="card-title">新增優惠</div>
+        <div class="type-toggle">
+          <button class="type-btn active" onclick="switchAddType('coupon',this)">🎫 折價券</button>
+          <button class="type-btn" onclick="switchAddType('stamp_card',this)">🎯 集點卡</button>
+        </div>
+        <div class="form-group">
+          <label>店家名稱 *</label>
+          <input type="text" id="add-store" placeholder="例：麥當勞、全家、星巴克">
+        </div>
+        <div class="form-group">
+          <label>分類</label>
+          <select id="add-cat">
+            <option value="餐廳">🍽️ 餐廳</option>
+            <option value="飲料">🧋 飲料</option>
+            <option value="超市/量販">🛒 超市/量販</option>
+            <option value="銀行/信用卡">💳 銀行/信用卡</option>
+            <option value="美妝/藥妝">💄 美妝/藥妝</option>
+            <option value="服飾">👗 服飾</option>
+            <option value="娛樂">🎬 娛樂</option>
+            <option value="其他">🏷️ 其他</option>
+          </select>
+        </div>
+
+        <!-- 折價券欄位 -->
+        <div id="coupon-fields">
+          <div class="form-group">
+            <label>折扣內容 *</label>
+            <input type="text" id="add-discount" placeholder="例：滿300折50、8折、買一送一">
+          </div>
+          <div class="form-group">
+            <label>使用條件（選填）</label>
+            <textarea id="add-conditions" placeholder="例：限指定商品、須出示會員卡、不可與其他優惠合併使用..."></textarea>
+          </div>
+          <div class="form-group">
+            <label>最低消費（選填）</label>
+            <input type="number" id="add-min-spend" placeholder="例：300" min="0">
+          </div>
+        </div>
+
+        <!-- 集點卡欄位 -->
+        <div id="stamp-fields" style="display:none">
+          <div class="form-row">
+            <div class="form-group">
+              <label>目前點數</label>
+              <input type="number" id="add-current-stamps" value="0" min="0">
+            </div>
+            <div class="form-group">
+              <label>目標點數 *</label>
+              <input type="number" id="add-total-stamps" value="10" min="1">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>兌換獎勵</label>
+            <input type="text" id="add-reward" placeholder="例：免費飲料一杯、折抵100元">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>到期日（選填）</label>
+          <input type="date" id="add-expiry">
+        </div>
+        <div class="form-group">
+          <label>備註（選填）</label>
+          <input type="text" id="add-notes" placeholder="補充說明...">
+        </div>
+        <button class="btn btn-primary btn-block" id="add-btn" onclick="addCoupon()">新增</button>
+      </div>
+    </div>
+
+    <!-- 設定 -->
+    <div id="section-settings" class="section">
+      <div class="card">
+        <div class="card-title">🏡 家庭空間</div>
+        <div class="invite-code-box">
+          <div style="font-size:13px;color:var(--gray-600);margin-bottom:8px">邀請家人輸入此邀請碼加入</div>
+          <div class="invite-code" id="display-invite-code">------</div>
+          <div style="font-size:12px;color:var(--gray-600);margin-top:8px">分享給家人，他們註冊後輸入此碼即可加入</div>
+          <button class="btn btn-secondary" style="margin-top:12px;font-size:13px;padding:8px 16px" onclick="copyInviteCode()">複製邀請碼</button>
+        </div>
+      </div>
+      <div class="card"><div class="card-title">👥 家庭成員</div><div id="members-list"></div></div>
+      <div class="card">
+        <div class="card-title">👤 我的帳號</div>
+        <div style="font-size:14px;color:var(--gray-600)" id="user-email-display"></div>
+        <button class="btn btn-secondary" style="margin-top:14px" onclick="signOut()">登出</button>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- 編輯 Modal -->
+<div class="modal-overlay" id="edit-modal">
+  <div class="modal">
+    <h2>編輯</h2>
+    <input type="hidden" id="edit-id">
+    <input type="hidden" id="edit-type">
+    <div class="form-group">
+      <label>店家名稱</label>
+      <input type="text" id="edit-store">
+    </div>
+    <div class="form-group">
+      <label>分類</label>
+      <select id="edit-cat">
+        <option value="餐廳">🍽️ 餐廳</option>
+        <option value="飲料">🧋 飲料</option>
+        <option value="超市/量販">🛒 超市/量販</option>
+        <option value="銀行/信用卡">💳 銀行/信用卡</option>
+        <option value="美妝/藥妝">💄 美妝/藥妝</option>
+        <option value="服飾">👗 服飾</option>
+        <option value="娛樂">🎬 娛樂</option>
+        <option value="其他">🏷️ 其他</option>
+      </select>
+    </div>
+    <div id="edit-coupon-fields">
+      <div class="form-group">
+        <label>折扣內容</label>
+        <input type="text" id="edit-discount">
+      </div>
+      <div class="form-group">
+        <label>使用條件</label>
+        <textarea id="edit-conditions"></textarea>
+      </div>
+      <div class="form-group">
+        <label>最低消費</label>
+        <input type="number" id="edit-min-spend" min="0">
+      </div>
+    </div>
+    <div id="edit-stamp-fields" style="display:none">
+      <div class="form-row">
+        <div class="form-group">
+          <label>目前點數</label>
+          <input type="number" id="edit-current-stamps" min="0">
+        </div>
+        <div class="form-group">
+          <label>目標點數</label>
+          <input type="number" id="edit-total-stamps" min="1">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>兌換獎勵</label>
+        <input type="text" id="edit-reward">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>到期日</label>
+      <input type="date" id="edit-expiry">
+    </div>
+    <div class="form-group">
+      <label>備註</label>
+      <input type="text" id="edit-notes">
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" style="flex:1" onclick="closeModal()">取消</button>
+      <button class="btn btn-primary" style="flex:1" onclick="saveEdit()">儲存</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/*
+⚠️ 使用前請先在 Supabase SQL Editor 執行：
+
+CREATE TABLE coupons (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  household_id uuid REFERENCES households(id) ON DELETE CASCADE,
+  type text NOT NULL DEFAULT 'coupon',
+  store text NOT NULL,
+  category text NOT NULL DEFAULT '其他',
+  discount_info text,
+  conditions text,
+  min_spend numeric,
+  current_stamps integer DEFAULT 0,
+  total_stamps integer DEFAULT 10,
+  reward text,
+  expiry_date date,
+  status text DEFAULT 'active',
+  notes text,
+  added_by uuid,
+  created_at timestamptz DEFAULT now()
+);
+
+ALTER TABLE coupons ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "household_access" ON coupons FOR ALL USING (
+  household_id IN (SELECT household_id FROM profiles WHERE id = auth.uid())
+);
+*/
+
+const SUPABASE_URL = 'https://fnsughnssooceatrtbad.supabase.co'
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZuc3VnaG5zc29vY2VhdHJ0YmFkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQyNTUzMTYsImV4cCI6MjA5OTgzMTMxNn0.5v4uCfCMsa0cbEMxkvKPmJHJayjE_iyAfvw5pehh6Pg'
+const { createClient } = supabase
+const db = createClient(SUPABASE_URL, SUPABASE_KEY)
+
+let currentUser = null, currentHousehold = null, coupons = [], authMode = 'login', addType = 'coupon'
+
+const CAT_ICONS = {
+  '餐廳':'🍽️','飲料':'🧋','超市/量販':'🛒','銀行/信用卡':'💳',
+  '美妝/藥妝':'💄','服飾':'👗','娛樂':'🎬','其他':'🏷️'
+}
+
+// ── Auth ──
+db.auth.onAuthStateChange(async (event, session) => {
+  if (session?.user) { currentUser = session.user; await loadProfile() }
+  else { currentUser = null; currentHousehold = null; showScreen('auth') }
+})
+
+async function loadProfile() {
+  let { data, error } = await db.from('profiles').select('*, households(*)').eq('id', currentUser.id).single()
+  if (!data || error) {
+    await db.from('profiles').insert({ id: currentUser.id, email: currentUser.email })
+    const result = await db.from('profiles').select('*, households(*)').eq('id', currentUser.id).single()
+    data = result.data
+  }
+  if (!data) { showScreen('auth'); return }
+  if (data.household_id && data.households) {
+    currentHousehold = data.households
+    document.getElementById('household-name-badge').textContent = currentHousehold.name
+    document.getElementById('display-invite-code').textContent = currentHousehold.invite_code
+    document.getElementById('user-email-display').textContent = currentUser.email
+    await loadCoupons()
+    showScreen('app')
+  } else { showScreen('household') }
+}
+
+function showScreen(name) {
+  document.getElementById('loading-screen').style.display = 'none'
+  document.getElementById('auth-screen').style.display = name==='auth' ? 'flex' : 'none'
+  document.getElementById('household-screen').style.display = name==='household' ? 'flex' : 'none'
+  document.getElementById('app').style.display = name==='app' ? 'block' : 'none'
+}
+
+function switchAuthTab(mode) {
+  authMode = mode
+  document.querySelectorAll('.auth-tab').forEach((t,i) => t.classList.toggle('active',(i===0&&mode==='login')||(i===1&&mode==='signup')))
+  document.getElementById('auth-btn').textContent = mode==='login' ? '登入' : '註冊'
+  document.getElementById('auth-message').innerHTML = ''
+}
+
+async function handleAuth() {
+  const email = document.getElementById('auth-email').value.trim()
+  const password = document.getElementById('auth-password').value
+  const btn = document.getElementById('auth-btn')
+  if (!email||!password) { showAuthMsg('請填寫信箱和密碼','error'); return }
+  btn.disabled=true; btn.textContent='處理中...'
+  if (authMode==='login') {
+    const { error } = await db.auth.signInWithPassword({ email, password })
+    if (error) { showAuthMsg('登入失敗：'+translateError(error.message),'error'); btn.disabled=false; btn.textContent='登入' }
+  } else {
+    const { error } = await db.auth.signUp({ email, password })
+    if (error) { showAuthMsg('註冊失敗：'+translateError(error.message),'error'); btn.disabled=false; btn.textContent='註冊' }
+    else { showAuthMsg('✅ 註冊成功！請直接登入。','success'); switchAuthTab('login'); btn.disabled=false; btn.textContent='登入' }
+  }
+}
+function showAuthMsg(msg,type) { document.getElementById('auth-message').innerHTML=`<div class="${type==='error'?'auth-error':'auth-success'}">${msg}</div>` }
+function translateError(msg) {
+  if (!msg) return '請稍後再試'
+  if (msg.includes('Invalid login')) return '信箱或密碼錯誤'
+  if (msg.includes('already registered')) return '此信箱已被註冊'
+  if (msg.includes('Password should be')) return '密碼至少需要 6 個字元'
+  return msg
+}
+async function signOut() { await db.auth.signOut() }
+
+async function createHousehold() {
+  const name = document.getElementById('household-name').value.trim()
+  if (!name) { showHouseholdMsg('請輸入家庭名稱','error'); return }
+  const { data: hh, error } = await db.from('households').insert({ name, owner_id: currentUser.id }).select().single()
+  if (error) { showHouseholdMsg('建立失敗：'+error.message,'error'); return }
+  await db.from('profiles').update({ household_id: hh.id }).eq('id', currentUser.id)
+  await loadProfile()
+}
+async function joinHousehold() {
+  const code = document.getElementById('invite-input').value.trim().toUpperCase()
+  if (!code||code.length!==6) { showHouseholdMsg('請輸入 6 位邀請碼','error'); return }
+  const { data: hh, error } = await db.from('households').select().eq('invite_code',code).single()
+  if (error||!hh) { showHouseholdMsg('找不到此邀請碼','error'); return }
+  await db.from('profiles').update({ household_id: hh.id }).eq('id', currentUser.id)
+  await loadProfile()
+}
+function showHouseholdMsg(msg,type) { document.getElementById('household-message').innerHTML=`<div class="${type==='error'?'auth-error':'auth-success'}" style="margin-bottom:14px">${msg}</div>` }
+
+// ── Data ──
+async function loadCoupons() {
+  if (!currentHousehold) return
+  const { data } = await db.from('coupons').select('*').eq('household_id', currentHousehold.id).order('created_at', { ascending: false })
+  coupons = data || []
+  renderDashboard()
+}
+
+function today() { return new Date().toISOString().split('T')[0] }
+function daysUntil(d) { if (!d) return null; return Math.ceil((new Date(d) - new Date(today())) / 86400000) }
+function formatDate(d) {
+  if (!d) return '無到期日'
+  const dt = new Date(d)
+  return `${dt.getFullYear()}/${String(dt.getMonth()+1).padStart(2,'0')}/${String(dt.getDate()).padStart(2,'0')}`
+}
+
+function getStatus(item) {
+  if (item.status === 'used') return 'used'
+  if (item.type === 'stamp_card' && item.current_stamps >= item.total_stamps) return 'redeemable'
+  if (!item.expiry_date) return 'active'
+  const d = daysUntil(item.expiry_date)
+  if (d < 0) return 'expired'
+  if (d <= 7) return 'expiring'
+  return 'active'
+}
+
+function expiryText(item) {
+  if (item.status === 'used') return { text: '已使用', cls: 'eb-used' }
+  if (!item.expiry_date) return { text: '無到期日', cls: 'eb-none' }
+  const d = daysUntil(item.expiry_date)
+  if (d < 0) return { text: `已過期 ${Math.abs(d)} 天`, cls: 'eb-expired' }
+  if (d === 0) return { text: '今天到期！', cls: 'eb-expiring' }
+  if (d <= 7) return { text: `還有 ${d} 天到期`, cls: 'eb-expiring' }
+  return { text: `${formatDate(item.expiry_date)} 到期`, cls: 'eb-active' }
+}
+
+function showSection(id, btn) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'))
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'))
+  document.getElementById('section-' + id).classList.add('active')
+  if (btn) btn.classList.add('active')
+  if (id === 'dashboard') renderDashboard()
+  if (id === 'list') { buildFilterOptions(); renderList() }
+  if (id === 'settings') renderSettings()
+}
+
+// ── Dashboard ──
+function renderDashboard() {
+  const active = coupons.filter(c => { const s = getStatus(c); return s !== 'used' && s !== 'expired' })
+  const expiring = active.filter(c => getStatus(c) === 'expiring')
+  const redeemable = coupons.filter(c => getStatus(c) === 'redeemable')
+
+  document.getElementById('stat-expiring').textContent = expiring.length
+  document.getElementById('stat-redeemable').textContent = redeemable.length
+  document.getElementById('stat-total').textContent = active.length
+
+  const alertsEl = document.getElementById('dashboard-alerts')
+  alertsEl.innerHTML = ''
+  if (expiring.length) alertsEl.innerHTML += `<div class="alert warning">⏰ 有 ${expiring.length} 張優惠即將到期！</div>`
+  if (redeemable.length) alertsEl.innerHTML += `<div class="alert success">🎉 有 ${redeemable.length} 張集點卡可以兌換了！</div>`
+
+  const urgentItems = [...expiring].sort((a,b) => new Date(a.expiry_date) - new Date(b.expiry_date))
+  document.getElementById('urgent-list').innerHTML = urgentItems.length === 0
+    ? '<div class="empty"><div class="empty-icon">✅</div><p>沒有即將到期的優惠</p></div>'
+    : urgentItems.map(miniCard).join('')
+
+  const stampCards = coupons.filter(c => c.type === 'stamp_card' && c.status !== 'used')
+    .sort((a,b) => (b.current_stamps/b.total_stamps) - (a.current_stamps/a.total_stamps))
+  document.getElementById('stamp-list').innerHTML = stampCards.length === 0
+    ? '<div class="empty"><div class="empty-icon">🎯</div><p>尚無集點卡</p></div>'
+    : stampCards.map(miniStampCard).join('')
+}
+
+function miniCard(item) {
+  const exp = expiryText(item)
+  const subtitle = item.type === 'coupon'
+    ? `<div style="font-size:15px;font-weight:700;color:var(--danger);margin:2px 0">${item.discount_info||''}</div>`
+    : `<div style="font-size:12px;color:var(--purple)">${item.current_stamps}/${item.total_stamps} 點${item.reward ? ` · ${item.reward}` : ''}</div>`
+  return `<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--gray-100)">
+    <span style="font-size:24px;flex-shrink:0">${CAT_ICONS[item.category]||'🏷️'}</span>
+    <div style="flex:1;min-width:0">
+      <div style="font-weight:600;font-size:14px">${item.store}</div>
+      ${subtitle}
+      <div class="eb ${exp.cls}">${exp.text}</div>
+    </div>
+    <button class="btn-icon del" onclick="deleteItem('${item.id}')">🗑️</button>
+  </div>`
+}
+
+function miniStampCard(item) {
+  const pct = Math.min(100, Math.round((item.current_stamps / item.total_stamps) * 100))
+  const status = getStatus(item)
+  const exp = expiryText(item)
+  return `<div style="padding:10px 0;border-bottom:1px solid var(--gray-100)">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div style="font-weight:600;font-size:14px">${CAT_ICONS[item.category]||'🏷️'} ${item.store}</div>
+      ${status === 'redeemable'
+        ? `<span class="tag tag-ok">🎉 可兌換</span>`
+        : `<span style="font-size:12px;color:var(--gray-600)">${item.current_stamps}/${item.total_stamps}</span>`}
+    </div>
+    <div class="stamp-bar-bg"><div class="stamp-bar-fill" style="width:${pct}%"></div></div>
+    <div class="stamp-counts"><span>${pct}%</span><span>${item.reward||'集點兌換'}</span></div>
+    <div class="eb ${exp.cls}" style="margin-top:3px">${exp.text}</div>
+    <div class="btn-row" style="margin-top:6px">
+      ${status === 'redeemable'
+        ? `<button class="btn-mini btn-mini-redeem" onclick="markUsed('${item.id}')">✅ 標記已兌換</button>`
+        : `<button class="btn-mini btn-mini-stamp" onclick="addStamp('${item.id}')">＋ 蓋章</button>`}
+    </div>
+  </div>`
+}
+
+// ── List ──
+function buildFilterOptions() {
+  const cats = [...new Set(coupons.map(c => c.category))]
+  const catSel = document.getElementById('filter-cat')
+  const cv = catSel.value
+  catSel.innerHTML = '<option value="">全部分類</option>' + cats.map(c => `<option value="${c}">${CAT_ICONS[c]||''} ${c}</option>`).join('')
+  catSel.value = cv
+}
+
+function renderList() {
+  const q = document.getElementById('search-input').value.toLowerCase()
+  const type = document.getElementById('filter-type').value
+  const cat = document.getElementById('filter-cat').value
+  const statusFilter = document.getElementById('filter-status').value
+
+  let filtered = coupons.filter(c => {
+    if (q && !c.store.toLowerCase().includes(q)) return false
+    if (type && c.type !== type) return false
+    if (cat && c.category !== cat) return false
+    const s = getStatus(c)
+    if (statusFilter === 'active') return s !== 'used' && s !== 'expired'
+    if (statusFilter === 'used') return s === 'used'
+    if (statusFilter === 'expired_only') return s === 'expired'
+    return true
+  })
+
+  const el = document.getElementById('list-container')
+  if (filtered.length === 0) {
+    el.innerHTML = '<div class="empty"><div class="empty-icon">🔍</div><p>找不到符合的項目</p></div>'
+    return
+  }
+  el.innerHTML = filtered.map(fullCard).join('')
+}
+
+function fullCard(item) {
+  const status = getStatus(item)
+  const exp = expiryText(item)
+  const sc = { active:'s-active', expiring:'s-expiring', expired:'s-expired', used:'s-used', redeemable:'s-redeemable' }[status] || 's-active'
+  let body = ''
+
+  if (item.type === 'coupon') {
+    body = `
+      <div class="coupon-discount">${item.discount_info || '折扣優惠'}</div>
+      <div class="coupon-tags">
+        <span class="tag tag-coupon">🎫 折價券</span>
+        <span class="tag tag-cat">${CAT_ICONS[item.category]||''} ${item.category}</span>
+        ${item.min_spend ? `<span class="tag" style="background:#fff7ed;color:#c2410c">滿 ${item.min_spend} 元</span>` : ''}
+        ${status === 'used' ? '<span class="tag tag-used">已使用</span>' : ''}
+        ${status === 'redeemable' ? '<span class="tag tag-ok">🎉 達標</span>' : ''}
+      </div>
+      ${item.conditions ? `<div class="conditions-text">📋 ${item.conditions}</div>` : ''}
+      <div class="eb ${exp.cls}">${exp.text}</div>
+      ${item.notes ? `<div style="font-size:12px;color:var(--gray-400);margin-top:4px">${item.notes}</div>` : ''}
+      <div class="btn-row">
+        ${status !== 'used' && status !== 'expired' ? `<button class="btn-mini btn-mini-used" onclick="markUsed('${item.id}')">✅ 已使用</button>` : ''}
+      </div>`
+  } else {
+    const pct = Math.min(100, Math.round((item.current_stamps / item.total_stamps) * 100))
+    body = `
+      <div class="coupon-tags">
+        <span class="tag tag-stamp">🎯 集點卡</span>
+        <span class="tag tag-cat">${CAT_ICONS[item.category]||''} ${item.category}</span>
+        ${status === 'used' ? '<span class="tag tag-used">已兌換</span>' : ''}
+        ${status === 'redeemable' ? '<span class="tag tag-ok">🎉 可兌換</span>' : ''}
+      </div>
+      <div class="stamp-bar-bg" style="margin-top:8px"><div class="stamp-bar-fill" style="width:${pct}%"></div></div>
+      <div class="stamp-counts"><span>${item.current_stamps} 點</span><span>目標 ${item.total_stamps} 點</span></div>
+      ${item.reward ? `<div class="stamp-reward">🎁 ${item.reward}</div>` : ''}
+      <div class="eb ${exp.cls}" style="margin-top:4px">${exp.text}</div>
+      ${item.notes ? `<div style="font-size:12px;color:var(--gray-400);margin-top:4px">${item.notes}</div>` : ''}
+      <div class="btn-row">
+        ${status === 'redeemable' ? `<button class="btn-mini btn-mini-redeem" onclick="markUsed('${item.id}')">✅ 標記已兌換</button>` : ''}
+        ${status !== 'used' && status !== 'expired' && status !== 'redeemable' ? `<button class="btn-mini btn-mini-stamp" onclick="addStamp('${item.id}')">＋ 蓋章</button>` : ''}
+      </div>`
+  }
+
+  return `<div class="coupon-card ${sc}">
+    <div class="coupon-top">
+      <div class="coupon-store">${CAT_ICONS[item.category]||'🏷️'} ${item.store}</div>
+      <div class="coupon-actions">
+        <button class="btn-icon" onclick="openEdit('${item.id}')">✏️</button>
+        <button class="btn-icon del" onclick="deleteItem('${item.id}')">🗑️</button>
+      </div>
+    </div>
+    ${body}
+  </div>`
+}
+
+// ── Add ──
+function switchAddType(type, btn) {
+  addType = type
+  document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'))
+  btn.classList.add('active')
+  document.getElementById('coupon-fields').style.display = type === 'coupon' ? 'block' : 'none'
+  document.getElementById('stamp-fields').style.display = type === 'stamp_card' ? 'block' : 'none'
+}
+
+async function addCoupon() {
+  const store = document.getElementById('add-store').value.trim()
+  if (!store) { alert('請輸入店家名稱！'); return }
+  if (addType === 'coupon' && !document.getElementById('add-discount').value.trim()) { alert('請輸入折扣內容！'); return }
+  const btn = document.getElementById('add-btn')
+  btn.disabled = true; btn.textContent = '新增中...'
+
+  const data = {
+    household_id: currentHousehold.id, type: addType, store,
+    category: document.getElementById('add-cat').value,
+    expiry_date: document.getElementById('add-expiry').value || null,
+    notes: document.getElementById('add-notes').value.trim(),
+    added_by: currentUser.id, status: 'active'
+  }
+  if (addType === 'coupon') {
+    data.discount_info = document.getElementById('add-discount').value.trim()
+    data.conditions = document.getElementById('add-conditions').value.trim()
+    data.min_spend = parseFloat(document.getElementById('add-min-spend').value) || null
+  } else {
+    data.current_stamps = parseInt(document.getElementById('add-current-stamps').value) || 0
+    data.total_stamps = parseInt(document.getElementById('add-total-stamps').value) || 10
+    data.reward = document.getElementById('add-reward').value.trim()
+  }
+
+  const { error } = await db.from('coupons').insert(data)
+  btn.disabled = false; btn.textContent = '新增'
+  if (error) { alert('新增失敗：' + error.message); return }
+
+  document.getElementById('add-store').value = ''
+  document.getElementById('add-discount').value = ''
+  document.getElementById('add-conditions').value = ''
+  document.getElementById('add-min-spend').value = ''
+  document.getElementById('add-current-stamps').value = '0'
+  document.getElementById('add-total-stamps').value = '10'
+  document.getElementById('add-reward').value = ''
+  document.getElementById('add-expiry').value = ''
+  document.getElementById('add-notes').value = ''
+  await loadCoupons()
+  alert('✅ 已新增！')
+}
+
+// ── CRUD ──
+async function deleteItem(id) {
+  if (!confirm('確定要刪除？')) return
+  await db.from('coupons').delete().eq('id', id)
+  await loadCoupons()
+  const listActive = document.getElementById('section-list').classList.contains('active')
+  if (listActive) { renderList(); buildFilterOptions() }
+}
+
+async function markUsed(id) {
+  await db.from('coupons').update({ status: 'used' }).eq('id', id)
+  await loadCoupons()
+  const listActive = document.getElementById('section-list').classList.contains('active')
+  if (listActive) renderList()
+}
+
+async function addStamp(id) {
+  const item = coupons.find(c => c.id === id); if (!item) return
+  const newStamps = item.current_stamps + 1
+  await db.from('coupons').update({ current_stamps: newStamps }).eq('id', id)
+  await loadCoupons()
+  const listActive = document.getElementById('section-list').classList.contains('active')
+  if (listActive) renderList()
+}
+
+// ── Edit ──
+function openEdit(id) {
+  const item = coupons.find(c => c.id === id); if (!item) return
+  document.getElementById('edit-id').value = id
+  document.getElementById('edit-type').value = item.type
+  document.getElementById('edit-store').value = item.store
+  document.getElementById('edit-cat').value = item.category
+  document.getElementById('edit-expiry').value = item.expiry_date || ''
+  document.getElementById('edit-notes').value = item.notes || ''
+
+  const isCoupon = item.type === 'coupon'
+  document.getElementById('edit-coupon-fields').style.display = isCoupon ? 'block' : 'none'
+  document.getElementById('edit-stamp-fields').style.display = isCoupon ? 'none' : 'block'
+  if (isCoupon) {
+    document.getElementById('edit-discount').value = item.discount_info || ''
+    document.getElementById('edit-conditions').value = item.conditions || ''
+    document.getElementById('edit-min-spend').value = item.min_spend || ''
+  } else {
+    document.getElementById('edit-current-stamps').value = item.current_stamps || 0
+    document.getElementById('edit-total-stamps').value = item.total_stamps || 10
+    document.getElementById('edit-reward').value = item.reward || ''
+  }
+  document.getElementById('edit-modal').classList.add('open')
+}
+
+function closeModal() { document.getElementById('edit-modal').classList.remove('open') }
+
+async function saveEdit() {
+  const id = document.getElementById('edit-id').value
+  const type = document.getElementById('edit-type').value
+  const updates = {
+    store: document.getElementById('edit-store').value.trim(),
+    category: document.getElementById('edit-cat').value,
+    expiry_date: document.getElementById('edit-expiry').value || null,
+    notes: document.getElementById('edit-notes').value.trim()
+  }
+  if (type === 'coupon') {
+    updates.discount_info = document.getElementById('edit-discount').value.trim()
+    updates.conditions = document.getElementById('edit-conditions').value.trim()
+    updates.min_spend = parseFloat(document.getElementById('edit-min-spend').value) || null
+  } else {
+    updates.current_stamps = parseInt(document.getElementById('edit-current-stamps').value) || 0
+    updates.total_stamps = parseInt(document.getElementById('edit-total-stamps').value) || 10
+    updates.reward = document.getElementById('edit-reward').value.trim()
+  }
+  const { error } = await db.from('coupons').update(updates).eq('id', id)
+  if (error) { alert('儲存失敗：' + error.message); return }
+  closeModal()
+  await loadCoupons()
+  renderList()
+}
+
+// ── Settings ──
+async function renderSettings() {
+  if (!currentHousehold) return
+  document.getElementById('display-invite-code').textContent = currentHousehold.invite_code
+  const { data: members } = await db.from('profiles').select('email').eq('household_id', currentHousehold.id)
+  document.getElementById('members-list').innerHTML = (members||[]).map(m =>
+    `<div class="member-row">
+      <div class="member-avatar">${m.email?m.email[0].toUpperCase():'?'}</div>
+      <div><div style="font-size:14px;font-weight:500">${m.email}</div></div>
+    </div>`).join('')
+}
+
+function copyInviteCode() {
+  const code = currentHousehold?.invite_code; if (!code) return
+  navigator.clipboard.writeText(code).then(() => alert('✅ 邀請碼已複製：' + code)).catch(() => alert('邀請碼：' + code))
+}
+
+document.getElementById('edit-modal').addEventListener('click', function(e) { if (e.target === this) closeModal() })
+</script>
+</body>
+</html>
