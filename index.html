@@ -258,13 +258,28 @@
         </div>
       </div>
       <div id="dashboard-alerts"></div>
-      <div class="card">
-        <div class="card-title">⏰ 即將到期（7天內）</div>
-        <div id="urgent-list"></div>
+      <!-- 總覽分頁 -->
+      <div style="display:flex;background:var(--gray-100);border-radius:10px;padding:4px;margin-bottom:16px">
+        <button id="dash-tab-coupon" style="flex:1;padding:10px;border:none;background:white;border-radius:8px;font-size:14px;font-weight:600;color:var(--primary);box-shadow:0 1px 4px rgba(0,0,0,0.1);cursor:pointer" onclick="switchDashTab('coupon')">🎫 折價券</button>
+        <button id="dash-tab-stamp" style="flex:1;padding:10px;border:none;background:none;border-radius:8px;font-size:14px;font-weight:600;color:var(--gray-600);cursor:pointer" onclick="switchDashTab('stamp')">🎯 集點卡</button>
       </div>
-      <div class="card">
-        <div class="card-title">🎯 集點卡進度</div>
-        <div id="stamp-list"></div>
+      <!-- 折價券 tab -->
+      <div id="dash-coupon-pane">
+        <div class="card">
+          <div class="card-title">⏰ 即將到期（7天內）</div>
+          <div id="urgent-list"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">🎫 全部有效折價券</div>
+          <div id="all-coupons-list"></div>
+        </div>
+      </div>
+      <!-- 集點卡 tab -->
+      <div id="dash-stamp-pane" style="display:none">
+        <div class="card">
+          <div class="card-title">🎯 集點卡進度</div>
+          <div id="stamp-list"></div>
+        </div>
       </div>
     </div>
 
@@ -300,7 +315,10 @@
         </div>
         <div class="form-group">
           <label>店家名稱 *</label>
-          <input type="text" id="add-store" placeholder="例：麥當勞、全家、星巴克">
+          <input type="text" id="add-store" list="store-suggestions" placeholder="例：麥當勞、全家、星巴克" autocomplete="off">
+          <datalist id="store-suggestions"></datalist>
+          <input type="file" id="scan-photo-input" accept="image/*" capture="environment" style="display:none" onchange="onScanPhotoSelected(this)">
+          <button type="button" id="btn-scan" class="btn btn-secondary" style="width:100%;font-size:13px;padding:9px;margin-top:8px" onclick="document.getElementById('scan-photo-input').click()">📷 掃描照片自動帶入資訊</button>
         </div>
         <div class="form-group">
           <label>分類</label>
@@ -319,16 +337,22 @@
         <!-- 折價券欄位 -->
         <div id="coupon-fields">
           <div class="form-group">
-            <label>折扣內容 *</label>
+            <label>折扣內容（選填）</label>
             <input type="text" id="add-discount" placeholder="例：滿300折50、8折、買一送一">
           </div>
           <div class="form-group">
             <label>使用條件（選填）</label>
             <textarea id="add-conditions" placeholder="例：限指定商品、須出示會員卡、不可與其他優惠合併使用..."></textarea>
           </div>
-          <div class="form-group">
-            <label>最低消費（選填）</label>
-            <input type="number" id="add-min-spend" placeholder="例：300" min="0">
+          <div class="form-row">
+            <div class="form-group">
+              <label>最低消費（選填）</label>
+              <input type="number" id="add-min-spend" placeholder="例：300" min="0">
+            </div>
+            <div class="form-group">
+              <label>張數</label>
+              <input type="number" id="add-quantity" value="1" min="1">
+            </div>
           </div>
         </div>
 
@@ -445,7 +469,10 @@
     <div id="edit-coupon-fields">
       <div class="form-group"><label>折扣內容</label><input type="text" id="edit-discount"></div>
       <div class="form-group"><label>使用條件</label><textarea id="edit-conditions"></textarea></div>
-      <div class="form-group"><label>最低消費</label><input type="number" id="edit-min-spend" min="0"></div>
+      <div class="form-row">
+        <div class="form-group"><label>最低消費</label><input type="number" id="edit-min-spend" min="0"></div>
+        <div class="form-group"><label>張數</label><input type="number" id="edit-quantity" min="1"></div>
+      </div>
     </div>
     <div id="edit-stamp-fields" style="display:none">
       <div class="form-row">
@@ -629,6 +656,7 @@ async function loadCoupons() {
   if (!currentHousehold) return
   const { data } = await db.from('coupons').select('*').eq('household_id', currentHousehold.id).order('created_at', { ascending: false })
   coupons = data || []
+  updateStoreSuggestions()
   renderDashboard()
 }
 
@@ -658,6 +686,26 @@ function expiryText(item) {
   if (d === 0) return { text: '今天到期！', cls: 'eb-expiring' }
   if (d <= 7) return { text: `還有 ${d} 天到期`, cls: 'eb-expiring' }
   return { text: `${formatDate(item.expiry_date)} 到期`, cls: 'eb-active' }
+}
+
+function switchDashTab(tab) {
+  const isCoupon = tab === 'coupon'
+  document.getElementById('dash-coupon-pane').style.display = isCoupon ? 'block' : 'none'
+  document.getElementById('dash-stamp-pane').style.display = isCoupon ? 'none' : 'block'
+  const btnCoupon = document.getElementById('dash-tab-coupon')
+  const btnStamp = document.getElementById('dash-tab-stamp')
+  btnCoupon.style.background = isCoupon ? 'white' : 'none'
+  btnCoupon.style.color = isCoupon ? 'var(--primary)' : 'var(--gray-600)'
+  btnCoupon.style.boxShadow = isCoupon ? '0 1px 4px rgba(0,0,0,0.1)' : 'none'
+  btnStamp.style.background = isCoupon ? 'none' : 'white'
+  btnStamp.style.color = isCoupon ? 'var(--gray-600)' : 'var(--primary)'
+  btnStamp.style.boxShadow = isCoupon ? 'none' : '0 1px 4px rgba(0,0,0,0.1)'
+}
+
+function updateStoreSuggestions() {
+  const stores = [...new Set(coupons.map(c => c.store).filter(Boolean))].sort()
+  const datalist = document.getElementById('store-suggestions')
+  if (datalist) datalist.innerHTML = stores.map(s => `<option value="${s}">`).join('')
 }
 
 function showSection(id, btn) {
@@ -745,10 +793,18 @@ function renderDashboard() {
   if (expiring.length) alertsEl.innerHTML += `<div class="alert warning">⏰ 有 ${expiring.length} 張優惠即將到期！</div>`
   if (redeemable.length) alertsEl.innerHTML += `<div class="alert success">🎉 有 ${redeemable.length} 張集點卡可以兌換了！</div>`
 
-  const urgentItems = [...expiring].sort((a,b) => new Date(a.expiry_date) - new Date(b.expiry_date))
-  document.getElementById('urgent-list').innerHTML = urgentItems.length === 0
-    ? '<div class="empty"><div class="empty-icon">✅</div><p>沒有即將到期的優惠</p></div>'
-    : urgentItems.map(miniCard).join('')
+  // 折價券：即將到期
+  const urgentCoupons = expiring.filter(c => c.type === 'coupon').sort((a,b) => new Date(a.expiry_date) - new Date(b.expiry_date))
+  document.getElementById('urgent-list').innerHTML = urgentCoupons.length === 0
+    ? '<div class="empty"><div class="empty-icon">✅</div><p>沒有即將到期的折價券</p></div>'
+    : urgentCoupons.map(miniCard).join('')
+
+  // 折價券：全部有效（非即將到期）
+  const otherCoupons = active.filter(c => c.type === 'coupon' && getStatus(c) !== 'expiring')
+    .sort((a,b) => { if (!a.expiry_date) return 1; if (!b.expiry_date) return -1; return new Date(a.expiry_date) - new Date(b.expiry_date) })
+  document.getElementById('all-coupons-list').innerHTML = otherCoupons.length === 0
+    ? '<div class="empty"><div class="empty-icon">🎫</div><p>目前沒有其他有效折價券</p></div>'
+    : otherCoupons.map(miniCard).join('')
 
   const stampCards = coupons.filter(c => c.type === 'stamp_card' && c.status !== 'used')
     .sort((a,b) => (b.current_stamps/b.total_stamps) - (a.current_stamps/a.total_stamps))
@@ -761,19 +817,18 @@ function renderDashboard() {
 
 function miniCard(item) {
   const exp = expiryText(item)
-  const subtitle = item.type === 'coupon'
-    ? `<div style="font-size:15px;font-weight:700;color:var(--danger);margin:2px 0">${item.discount_info||''}</div>`
-    : `<div style="font-size:12px;color:var(--purple)">${item.current_stamps}/${item.total_stamps} 點${item.reward ? ` · ${item.reward}` : ''}</div>`
-  return `<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--gray-100)">
-    ${item.photo_url
-      ? `<img src="${item.photo_url}" style="width:44px;height:44px;border-radius:8px;object-fit:cover;flex-shrink:0">`
-      : `<span style="font-size:24px;flex-shrink:0">${CAT_ICONS[item.category]||'🏷️'}</span>`}
-    <div style="flex:1;min-width:0">
-      <div style="font-weight:600;font-size:14px">${item.store}</div>
-      ${subtitle}
-      <div class="eb ${exp.cls}">${exp.text}</div>
+  const qty = (item.coupon_quantity||1) > 1 ? `<span style="font-size:11px;background:#fff7ed;color:#c2410c;font-weight:700;padding:1px 7px;border-radius:99px;margin-left:4px">×${item.coupon_quantity}張</span>` : ''
+  return `<div style="padding:10px 0;border-bottom:1px solid var(--gray-100)">
+    ${item.photo_url ? `<img src="${item.photo_url}" style="width:100%;height:130px;object-fit:cover;border-radius:10px;margin-bottom:8px">` : ''}
+    <div style="display:flex;align-items:center;gap:10px">
+      ${!item.photo_url ? `<span style="font-size:24px;flex-shrink:0">${CAT_ICONS[item.category]||'🏷️'}</span>` : ''}
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:700;font-size:14px">${item.store}${qty}</div>
+        ${item.discount_info ? `<div style="font-size:14px;font-weight:800;color:var(--danger);margin:2px 0">${item.discount_info}</div>` : ''}
+        <div class="eb ${exp.cls}">${exp.text}</div>
+      </div>
+      <button class="btn-icon del" onclick="deleteItem('${item.id}')">🗑️</button>
     </div>
-    <button class="btn-icon del" onclick="deleteItem('${item.id}')">🗑️</button>
   </div>`
 }
 
@@ -782,8 +837,9 @@ function miniStampCard(item) {
   const status = getStatus(item)
   const exp = expiryText(item)
   return `<div style="padding:10px 0;border-bottom:1px solid var(--gray-100)">
+    ${item.photo_url ? `<img src="${item.photo_url}" style="width:100%;height:130px;object-fit:cover;border-radius:10px;margin-bottom:8px">` : ''}
     <div style="display:flex;justify-content:space-between;align-items:center">
-      <div style="font-weight:600;font-size:14px">${CAT_ICONS[item.category]||'🏷️'} ${item.store}</div>
+      <div style="font-weight:700;font-size:14px">${CAT_ICONS[item.category]||'🏷️'} ${item.store}</div>
       ${status === 'redeemable'
         ? `<span class="tag tag-ok">🎉 可兌換</span>`
         : `<span style="font-size:12px;color:var(--gray-600)">${item.current_stamps}/${item.total_stamps}</span>`}
@@ -796,6 +852,7 @@ function miniStampCard(item) {
       ${status === 'redeemable'
         ? `<button class="btn-mini btn-mini-redeem" onclick="markUsed('${item.id}')">✅ 標記已兌換</button>`
         : `<button class="btn-mini btn-mini-stamp" onclick="addStamp('${item.id}')">＋ 蓋章</button>`}
+      <button class="btn-icon del" onclick="deleteItem('${item.id}')" style="margin-left:auto">🗑️</button>
     </div>
   </div>`
 }
@@ -845,6 +902,7 @@ function fullCard(item) {
         <span class="tag tag-coupon">🎫 折價券</span>
         <span class="tag tag-cat">${CAT_ICONS[item.category]||''} ${item.category}</span>
         ${item.min_spend ? `<span class="tag" style="background:#fff7ed;color:#c2410c">滿 ${item.min_spend} 元</span>` : ''}
+        ${(item.coupon_quantity||1) > 1 ? `<span class="tag" style="background:#fff7ed;color:#c2410c;font-weight:700">×${item.coupon_quantity} 張</span>` : ''}
         ${item.store_lat ? `<span class="tag tag-loc">📍 位置已記錄</span>` : ''}
         ${status === 'used' ? '<span class="tag tag-used">已使用</span>' : ''}
       </div>
@@ -930,7 +988,6 @@ function switchAddType(type, btn) {
 async function addCoupon() {
   const store = document.getElementById('add-store').value.trim()
   if (!store) { alert('請輸入店家名稱！'); return }
-  if (addType === 'coupon' && !document.getElementById('add-discount').value.trim()) { alert('請輸入折扣內容！'); return }
   const btn = document.getElementById('add-btn')
   btn.disabled = true; btn.textContent = '新增中...'
 
@@ -950,6 +1007,7 @@ async function addCoupon() {
     data.discount_info = document.getElementById('add-discount').value.trim()
     data.conditions = document.getElementById('add-conditions').value.trim()
     data.min_spend = parseFloat(document.getElementById('add-min-spend').value) || null
+    data.coupon_quantity = parseInt(document.getElementById('add-quantity').value) || 1
   } else {
     data.current_stamps = parseInt(document.getElementById('add-current-stamps').value) || 0
     data.total_stamps = parseInt(document.getElementById('add-total-stamps').value) || 10
@@ -967,6 +1025,7 @@ async function addCoupon() {
   document.getElementById('add-discount').value = ''
   document.getElementById('add-conditions').value = ''
   document.getElementById('add-min-spend').value = ''
+  document.getElementById('add-quantity').value = '1'
   document.getElementById('add-current-stamps').value = '0'
   document.getElementById('add-total-stamps').value = '10'
   document.getElementById('add-reward').value = ''
@@ -1022,6 +1081,7 @@ function openEdit(id) {
     document.getElementById('edit-discount').value = item.discount_info || ''
     document.getElementById('edit-conditions').value = item.conditions || ''
     document.getElementById('edit-min-spend').value = item.min_spend || ''
+    document.getElementById('edit-quantity').value = item.coupon_quantity || 1
   } else {
     document.getElementById('edit-current-stamps').value = item.current_stamps || 0
     document.getElementById('edit-total-stamps').value = item.total_stamps || 10
@@ -1061,6 +1121,7 @@ async function saveEdit() {
     updates.discount_info = document.getElementById('edit-discount').value.trim()
     updates.conditions = document.getElementById('edit-conditions').value.trim()
     updates.min_spend = parseFloat(document.getElementById('edit-min-spend').value) || null
+    updates.coupon_quantity = parseInt(document.getElementById('edit-quantity').value) || 1
   } else {
     updates.current_stamps = parseInt(document.getElementById('edit-current-stamps').value) || 0
     updates.total_stamps = parseInt(document.getElementById('edit-total-stamps').value) || 10
@@ -1094,6 +1155,84 @@ function copyInviteCode() {
 }
 
 document.getElementById('edit-modal').addEventListener('click', function(e) { if (e.target === this) closeModal() })
+
+// ── OCR 掃描 ──
+const VISION_API_KEY = 'AIzaSyB9Wwd2F4RFodGxf9POelh-Hfz0n6MjIkE'
+
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(reader.result)
+    reader.onerror = reject
+    reader.readAsDataURL(file)
+  })
+}
+
+async function onScanPhotoSelected(input) {
+  const file = input.files[0]; if (!file) return
+  const btn = document.getElementById('btn-scan')
+  btn.disabled = true; btn.textContent = '🔍 辨識中...'
+
+  try {
+    const base64 = await fileToBase64(file)
+    const base64Data = base64.split(',')[1]
+
+    const res = await fetch(`https://vision.googleapis.com/v1/images:annotate?key=${VISION_API_KEY}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ requests: [{ image: { content: base64Data }, features: [
+        { type: 'TEXT_DETECTION', maxResults: 1 },
+        { type: 'LOGO_DETECTION', maxResults: 3 }
+      ]}]})
+    })
+    const json = await res.json()
+    const ann = json.responses?.[0]
+
+    // 品牌 Logo → 店家名稱
+    let storeName = ann?.logoAnnotations?.[0]?.description || ''
+
+    // 全文
+    const fullText = ann?.textAnnotations?.[0]?.description || ''
+    const lines = fullText.split('\n').map(l => l.trim()).filter(Boolean)
+
+    // 從文字找折扣資訊
+    let discountInfo = ''
+    for (const line of lines) {
+      if (/折|優惠|OFF|%|%|特價|省|買一|免費|贈/i.test(line) && line.length <= 30) {
+        discountInfo = line; break
+      }
+    }
+
+    // 沒有 logo 時，用頭幾行提示使用者選擇
+    if (!storeName && lines.length > 0) {
+      const preview = lines.slice(0, 5).join('\n')
+      storeName = prompt(`辨識到的文字：\n${preview}\n\n請輸入或確認店家名稱：`, lines[0] || '') || ''
+    }
+
+    // 填入表單
+    if (storeName) document.getElementById('add-store').value = storeName
+    if (discountInfo) document.getElementById('add-discount').value = discountInfo
+
+    // 同時把這張照片設為優惠照片
+    addPhotoFile = file
+    const url = URL.createObjectURL(file)
+    document.getElementById('add-photo-preview').innerHTML = `<img src="${url}" style="width:100%;height:100%;object-fit:cover;border-radius:8px">`
+    document.getElementById('btn-clear-add-photo').style.display = 'block'
+
+    if (!storeName && !discountInfo) {
+      alert('無法自動辨識，請手動填入資訊')
+    } else {
+      const filled = [storeName && `店家：${storeName}`, discountInfo && `優惠：${discountInfo}`].filter(Boolean).join('\n')
+      alert(`✅ 辨識完成！\n${filled}\n\n請確認並補充其他欄位。`)
+    }
+  } catch (e) {
+    console.error(e)
+    alert('辨識失敗：' + (e.message || '請稍後再試'))
+  }
+
+  btn.disabled = false; btn.textContent = '📷 掃描照片自動帶入資訊'
+  input.value = ''
+}
 </script>
 </body>
 </html>
