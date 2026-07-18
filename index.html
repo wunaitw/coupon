@@ -59,18 +59,28 @@
   .stat.success .stat-num { color: var(--success); }
   .stat.ok .stat-num { color: var(--primary); }
 
+  /* 位置提示 */
+  .nearby-alert { background: linear-gradient(135deg, #f97316, #ef4444); color: white; border-radius: var(--radius); padding: 16px 18px; margin-bottom: 16px; box-shadow: 0 4px 16px rgba(249,115,22,0.35); }
+  .nearby-alert-title { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+  .nearby-alert-sub { font-size: 13px; opacity: 0.9; margin-bottom: 8px; }
+  .nearby-item { margin-top: 8px; background: rgba(255,255,255,0.2); border-radius: 8px; padding: 10px 12px; }
+  .nearby-item-store { font-weight: 700; font-size: 14px; }
+  .nearby-item-detail { font-size: 12px; opacity: 0.9; margin-top: 2px; }
+  .nearby-item-card { font-size: 12px; margin-top: 3px; background: rgba(255,255,255,0.15); border-radius: 6px; padding: 4px 8px; display: inline-block; }
+
+  /* 優惠卡片 */
   .coupon-card { background: white; border-radius: var(--radius); box-shadow: var(--shadow); padding: 14px; margin-bottom: 10px; border-left: 4px solid var(--gray-200); }
   .coupon-card.s-active { border-left-color: var(--primary); }
   .coupon-card.s-expiring { border-left-color: var(--warning); }
   .coupon-card.s-expired { border-left-color: var(--danger); }
   .coupon-card.s-used { border-left-color: var(--gray-400); opacity: 0.6; }
   .coupon-card.s-redeemable { border-left-color: var(--success); }
-
   .coupon-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 6px; }
   .coupon-store { font-weight: 700; font-size: 16px; }
   .coupon-actions { display: flex; gap: 6px; flex-shrink: 0; }
   .coupon-discount { font-size: 20px; font-weight: 800; color: var(--danger); margin: 4px 0 8px; }
   .coupon-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
+  .coupon-photo { width: 100%; max-height: 160px; object-fit: cover; border-radius: 8px; margin-bottom: 8px; }
 
   .tag { font-size: 11px; padding: 2px 8px; border-radius: 99px; }
   .tag-coupon { background: #fef3c7; color: #92400e; }
@@ -78,6 +88,7 @@
   .tag-cat { background: #eff6ff; color: #1d4ed8; }
   .tag-used { background: var(--gray-100); color: var(--gray-400); }
   .tag-ok { background: #f0fdf4; color: #166534; font-weight: 700; }
+  .tag-loc { background: #f0fdf4; color: var(--success); }
 
   .eb { font-size: 12px; font-weight: 600; margin-top: 4px; }
   .eb-active { color: var(--success); }
@@ -90,6 +101,7 @@
   .stamp-bar-fill { height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--purple), #a78bfa); transition: width .3s; }
   .stamp-counts { display: flex; justify-content: space-between; font-size: 12px; color: var(--gray-600); }
   .stamp-reward { font-size: 12px; color: var(--purple); font-weight: 600; margin-top: 4px; }
+  .physical-card-info { margin-top: 8px; background: #f5f3ff; border-radius: 8px; padding: 8px 10px; font-size: 12px; color: #5b21b6; }
 
   .btn-row { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; align-items: center; }
   .btn-mini { font-size: 12px; font-weight: 600; border-radius: 99px; padding: 5px 14px; cursor: pointer; border: 1px solid; line-height: 1; }
@@ -119,6 +131,16 @@
   input:focus, select:focus, textarea:focus { border-color: var(--primary); }
   .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 
+  /* 照片預覽 */
+  .photo-preview-box { width: 100%; height: 160px; border-radius: var(--radius); background: var(--gray-100); display: flex; align-items: center; justify-content: center; overflow: hidden; border: 2px dashed var(--gray-200); cursor: pointer; margin-bottom: 8px; }
+  .photo-placeholder { color: var(--gray-400); font-size: 14px; text-align: center; padding: 20px; }
+
+  /* 位置記錄 */
+  .location-box { background: var(--gray-50); border: 1px solid var(--gray-200); border-radius: 10px; padding: 12px 14px; }
+  .location-hint { font-size: 11px; color: var(--gray-400); margin-top: 6px; line-height: 1.5; }
+  .btn-location { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; background: white; border: 1px solid var(--gray-200); border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; margin-top: 8px; }
+  .btn-location:hover { background: var(--gray-50); }
+
   .btn { padding: 12px 20px; border: none; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; transition: all .15s; }
   .btn-primary { background: var(--primary); color: white; }
   .btn-primary:hover { background: var(--primary-dark); }
@@ -129,7 +151,6 @@
 
   .divider { display: flex; align-items: center; gap: 12px; margin: 20px 0; color: var(--gray-400); font-size: 13px; }
   .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--gray-200); }
-
   .invite-code-box { background: var(--gray-50); border: 2px dashed var(--gray-200); border-radius: 12px; padding: 20px; text-align: center; }
   .invite-code { font-size: 36px; font-weight: 900; letter-spacing: 8px; color: var(--primary); font-family: monospace; }
 
@@ -221,6 +242,7 @@
 
     <!-- 總覽 -->
     <div id="section-dashboard" class="section active">
+      <div id="nearby-alert" style="display:none" class="nearby-alert"></div>
       <div class="stats">
         <div class="stat danger">
           <div class="stat-num" id="stat-expiring">0</div>
@@ -326,12 +348,48 @@
             <label>兌換獎勵</label>
             <input type="text" id="add-reward" placeholder="例：免費飲料一杯、折抵100元">
           </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>實體卡數量</label>
+              <input type="number" id="add-physical-count" value="1" min="0">
+            </div>
+            <div class="form-group" style="display:flex;align-items:flex-end">
+              <div style="width:100%">
+                <label>存放位置</label>
+                <input type="text" id="add-physical-locations" placeholder="例：錢包1張、抽屜2張">
+              </div>
+            </div>
+          </div>
         </div>
 
         <div class="form-group">
           <label>到期日（選填）</label>
           <input type="date" id="add-expiry">
         </div>
+
+        <!-- 照片 -->
+        <div class="form-group">
+          <label>照片（選填）</label>
+          <input type="file" id="add-photo-input" accept="image/*" capture="environment" style="display:none" onchange="onAddPhotoSelected(this)">
+          <div class="photo-preview-box" id="add-photo-preview" onclick="document.getElementById('add-photo-input').click()">
+            <div class="photo-placeholder">📷<br>點擊拍照或選照片</div>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button type="button" class="btn btn-secondary" style="flex:1;font-size:13px;padding:9px" onclick="document.getElementById('add-photo-input').click()">📷 拍照 / 選照片</button>
+            <button type="button" id="btn-clear-add-photo" class="btn btn-secondary" style="display:none;flex:1;font-size:13px;padding:9px" onclick="clearAddPhoto()">✕ 移除</button>
+          </div>
+        </div>
+
+        <!-- 店家位置 -->
+        <div class="form-group">
+          <label>店家位置（選填）</label>
+          <div class="location-box">
+            <div id="add-location-status" style="font-size:13px;color:var(--gray-400)">尚未記錄</div>
+            <button type="button" class="btn-location" onclick="captureLocation('add')">📍 在店家附近時按這裡記錄位置</button>
+            <div class="location-hint">記錄後，下次靠近這家店 app 會自動提醒你有優惠可用</div>
+          </div>
+        </div>
+
         <div class="form-group">
           <label>備註（選填）</label>
           <input type="text" id="add-notes" placeholder="補充說明...">
@@ -347,7 +405,6 @@
         <div class="invite-code-box">
           <div style="font-size:13px;color:var(--gray-600);margin-bottom:8px">邀請家人輸入此邀請碼加入</div>
           <div class="invite-code" id="display-invite-code">------</div>
-          <div style="font-size:12px;color:var(--gray-600);margin-top:8px">分享給家人，他們註冊後輸入此碼即可加入</div>
           <button class="btn btn-secondary" style="margin-top:12px;font-size:13px;padding:8px 16px" onclick="copyInviteCode()">複製邀請碼</button>
         </div>
       </div>
@@ -386,43 +443,41 @@
       </select>
     </div>
     <div id="edit-coupon-fields">
-      <div class="form-group">
-        <label>折扣內容</label>
-        <input type="text" id="edit-discount">
-      </div>
-      <div class="form-group">
-        <label>使用條件</label>
-        <textarea id="edit-conditions"></textarea>
-      </div>
-      <div class="form-group">
-        <label>最低消費</label>
-        <input type="number" id="edit-min-spend" min="0">
-      </div>
+      <div class="form-group"><label>折扣內容</label><input type="text" id="edit-discount"></div>
+      <div class="form-group"><label>使用條件</label><textarea id="edit-conditions"></textarea></div>
+      <div class="form-group"><label>最低消費</label><input type="number" id="edit-min-spend" min="0"></div>
     </div>
     <div id="edit-stamp-fields" style="display:none">
       <div class="form-row">
-        <div class="form-group">
-          <label>目前點數</label>
-          <input type="number" id="edit-current-stamps" min="0">
-        </div>
-        <div class="form-group">
-          <label>目標點數</label>
-          <input type="number" id="edit-total-stamps" min="1">
-        </div>
+        <div class="form-group"><label>目前點數</label><input type="number" id="edit-current-stamps" min="0"></div>
+        <div class="form-group"><label>目標點數</label><input type="number" id="edit-total-stamps" min="1"></div>
       </div>
-      <div class="form-group">
-        <label>兌換獎勵</label>
-        <input type="text" id="edit-reward">
+      <div class="form-group"><label>兌換獎勵</label><input type="text" id="edit-reward"></div>
+      <div class="form-row">
+        <div class="form-group"><label>實體卡數量</label><input type="number" id="edit-physical-count" min="0"></div>
+        <div class="form-group"><label>存放位置</label><input type="text" id="edit-physical-locations"></div>
       </div>
     </div>
+    <div class="form-group"><label>到期日</label><input type="date" id="edit-expiry"></div>
+
+    <!-- 編輯照片 -->
     <div class="form-group">
-      <label>到期日</label>
-      <input type="date" id="edit-expiry">
+      <label>照片</label>
+      <input type="file" id="edit-photo-input" accept="image/*" capture="environment" style="display:none" onchange="onEditPhotoSelected(this)">
+      <div id="edit-photo-preview" style="margin-bottom:8px"></div>
+      <button type="button" class="btn btn-secondary" style="font-size:13px;padding:8px 14px" onclick="document.getElementById('edit-photo-input').click()">📷 更換照片</button>
     </div>
+
+    <!-- 編輯位置 -->
     <div class="form-group">
-      <label>備註</label>
-      <input type="text" id="edit-notes">
+      <label>店家位置</label>
+      <div class="location-box">
+        <div id="edit-location-status" style="font-size:13px;color:var(--gray-400)">尚未記錄</div>
+        <button type="button" class="btn-location" onclick="captureLocation('edit')">📍 更新位置</button>
+      </div>
     </div>
+
+    <div class="form-group"><label>備註</label><input type="text" id="edit-notes"></div>
     <div class="modal-footer">
       <button class="btn btn-secondary" style="flex:1" onclick="closeModal()">取消</button>
       <button class="btn btn-primary" style="flex:1" onclick="saveEdit()">儲存</button>
@@ -432,9 +487,10 @@
 
 <script>
 /*
-⚠️ 使用前請先在 Supabase SQL Editor 執行：
+⚠️ 請先在 Supabase SQL Editor 執行：
 
-CREATE TABLE coupons (
+-- 1. 建立資料表（第一次使用）
+CREATE TABLE IF NOT EXISTS coupons (
   id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
   household_id uuid REFERENCES households(id) ON DELETE CASCADE,
   type text NOT NULL DEFAULT 'coupon',
@@ -449,23 +505,38 @@ CREATE TABLE coupons (
   expiry_date date,
   status text DEFAULT 'active',
   notes text,
+  photo_url text,
+  physical_card_count integer DEFAULT 0,
+  physical_card_locations text,
+  store_lat numeric,
+  store_lng numeric,
   added_by uuid,
   created_at timestamptz DEFAULT now()
 );
-
 ALTER TABLE coupons ENABLE ROW LEVEL SECURITY;
-
 CREATE POLICY "household_access" ON coupons FOR ALL USING (
   household_id IN (SELECT household_id FROM profiles WHERE id = auth.uid())
 );
+
+-- 2. 如果資料表已存在，只需執行這段新增欄位：
+ALTER TABLE coupons ADD COLUMN IF NOT EXISTS photo_url text;
+ALTER TABLE coupons ADD COLUMN IF NOT EXISTS physical_card_count integer DEFAULT 0;
+ALTER TABLE coupons ADD COLUMN IF NOT EXISTS physical_card_locations text;
+ALTER TABLE coupons ADD COLUMN IF NOT EXISTS store_lat numeric;
+ALTER TABLE coupons ADD COLUMN IF NOT EXISTS store_lng numeric;
+
+-- 3. 在 Supabase → Storage → New bucket 建立：
+--    名稱: coupon-photos  ✓ Public bucket
 */
 
-const SUPABASE_URL = 'https://fnsughnssooceatrtbad.supabase.co'
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZuc3VnaG5zc29vY2VhdHJ0YmFkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQyNTUzMTYsImV4cCI6MjA5OTgzMTMxNn0.5v4uCfCMsa0cbEMxkvKPmJHJayjE_iyAfvw5pehh6Pg'
+const SUPABASE_URL = 'https://yairizijwewuvckfubku.supabase.co'
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlhaXJpemlqd2V3dXZja2Z1Ymt1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQzNjk1NjEsImV4cCI6MjA5OTk0NTU2MX0.dlPRHSEOgN-CcQObY3BVacluF4SXgsGYo2EW1LZR84c'
 const { createClient } = supabase
 const db = createClient(SUPABASE_URL, SUPABASE_KEY)
 
 let currentUser = null, currentHousehold = null, coupons = [], authMode = 'login', addType = 'coupon'
+let addPhotoFile = null, editPhotoFile = null
+let addLat = null, addLng = null, editLat = null, editLng = null
 
 const CAT_ICONS = {
   '餐廳':'🍽️','飲料':'🧋','超市/量販':'🛒','銀行/信用卡':'💳',
@@ -599,6 +670,66 @@ function showSection(id, btn) {
   if (id === 'settings') renderSettings()
 }
 
+// ── 位置偵測 ──
+function getDistance(lat1, lng1, lat2, lng2) {
+  const R = 6371000
+  const dLat = (lat2 - lat1) * Math.PI / 180
+  const dLng = (lng2 - lng1) * Math.PI / 180
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLng/2)**2
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))
+}
+
+function checkNearbyStores() {
+  if (!navigator.geolocation) return
+  navigator.geolocation.getCurrentPosition(pos => {
+    const { latitude: lat, longitude: lng } = pos.coords
+    const nearby = coupons.filter(c => {
+      if (!c.store_lat || !c.store_lng) return false
+      const s = getStatus(c)
+      if (s === 'used' || s === 'expired') return false
+      return getDistance(lat, lng, c.store_lat, c.store_lng) <= 300
+    })
+    const alertEl = document.getElementById('nearby-alert')
+    if (nearby.length === 0) { alertEl.style.display = 'none'; return }
+    const items = nearby.map(c => {
+      const s = getStatus(c)
+      const detail = c.type === 'coupon'
+        ? (c.discount_info || '折扣優惠')
+        : `集點 ${c.current_stamps}/${c.total_stamps}${c.reward ? ` · 獎勵：${c.reward}` : ''}`
+      const badge = s === 'redeemable' ? ' 🎉 可兌換！' : (s === 'expiring' ? ' ⏰ 即將到期' : '')
+      const cardInfo = (c.type === 'stamp_card' && c.physical_card_count > 0)
+        ? `<div class="nearby-item-card">💳 記得帶卡 · ${c.physical_card_locations || c.physical_card_count + '張'}</div>`
+        : ''
+      return `<div class="nearby-item">
+        <div class="nearby-item-store">${c.store}${badge}</div>
+        <div class="nearby-item-detail">${detail}</div>
+        ${cardInfo}
+      </div>`
+    }).join('')
+    alertEl.style.display = 'block'
+    alertEl.innerHTML = `<div class="nearby-alert-title">📍 你在附近！</div>
+      <div class="nearby-alert-sub">這些優惠記得使用：</div>${items}`
+  }, () => {}) // 靜默忽略拒絕授權
+}
+
+function captureLocation(prefix) {
+  if (!navigator.geolocation) { alert('你的裝置不支援位置功能'); return }
+  const btn = event.currentTarget
+  btn.textContent = '📍 偵測中...'
+  btn.disabled = true
+  navigator.geolocation.getCurrentPosition(pos => {
+    if (prefix === 'add') { addLat = pos.coords.latitude; addLng = pos.coords.longitude }
+    else { editLat = pos.coords.latitude; editLng = pos.coords.longitude }
+    document.getElementById(`${prefix}-location-status`).innerHTML = `<span style="color:var(--success)">✅ 位置已記錄</span>`
+    btn.textContent = '📍 重新記錄位置'
+    btn.disabled = false
+  }, () => {
+    alert('無法取得位置，請確認已開啟位置權限')
+    btn.textContent = '📍 在店家附近時按這裡記錄位置'
+    btn.disabled = false
+  })
+}
+
 // ── Dashboard ──
 function renderDashboard() {
   const active = coupons.filter(c => { const s = getStatus(c); return s !== 'used' && s !== 'expired' })
@@ -624,6 +755,8 @@ function renderDashboard() {
   document.getElementById('stamp-list').innerHTML = stampCards.length === 0
     ? '<div class="empty"><div class="empty-icon">🎯</div><p>尚無集點卡</p></div>'
     : stampCards.map(miniStampCard).join('')
+
+  checkNearbyStores()
 }
 
 function miniCard(item) {
@@ -632,7 +765,9 @@ function miniCard(item) {
     ? `<div style="font-size:15px;font-weight:700;color:var(--danger);margin:2px 0">${item.discount_info||''}</div>`
     : `<div style="font-size:12px;color:var(--purple)">${item.current_stamps}/${item.total_stamps} 點${item.reward ? ` · ${item.reward}` : ''}</div>`
   return `<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--gray-100)">
-    <span style="font-size:24px;flex-shrink:0">${CAT_ICONS[item.category]||'🏷️'}</span>
+    ${item.photo_url
+      ? `<img src="${item.photo_url}" style="width:44px;height:44px;border-radius:8px;object-fit:cover;flex-shrink:0">`
+      : `<span style="font-size:24px;flex-shrink:0">${CAT_ICONS[item.category]||'🏷️'}</span>`}
     <div style="flex:1;min-width:0">
       <div style="font-weight:600;font-size:14px">${item.store}</div>
       ${subtitle}
@@ -654,7 +789,8 @@ function miniStampCard(item) {
         : `<span style="font-size:12px;color:var(--gray-600)">${item.current_stamps}/${item.total_stamps}</span>`}
     </div>
     <div class="stamp-bar-bg"><div class="stamp-bar-fill" style="width:${pct}%"></div></div>
-    <div class="stamp-counts"><span>${pct}%</span><span>${item.reward||'集點兌換'}</span></div>
+    ${item.reward ? `<div style="font-size:11px;color:var(--purple);margin-top:3px">🎁 ${item.reward}</div>` : ''}
+    ${item.physical_card_count > 0 ? `<div style="font-size:11px;color:#5b21b6;margin-top:3px">💳 實體卡 ${item.physical_card_count} 張${item.physical_card_locations ? ' · ' + item.physical_card_locations : ''}</div>` : ''}
     <div class="eb ${exp.cls}" style="margin-top:3px">${exp.text}</div>
     <div class="btn-row" style="margin-top:6px">
       ${status === 'redeemable'
@@ -678,7 +814,6 @@ function renderList() {
   const type = document.getElementById('filter-type').value
   const cat = document.getElementById('filter-cat').value
   const statusFilter = document.getElementById('filter-status').value
-
   let filtered = coupons.filter(c => {
     if (q && !c.store.toLowerCase().includes(q)) return false
     if (type && c.type !== type) return false
@@ -689,7 +824,6 @@ function renderList() {
     if (statusFilter === 'expired_only') return s === 'expired'
     return true
   })
-
   const el = document.getElementById('list-container')
   if (filtered.length === 0) {
     el.innerHTML = '<div class="empty"><div class="empty-icon">🔍</div><p>找不到符合的項目</p></div>'
@@ -711,8 +845,8 @@ function fullCard(item) {
         <span class="tag tag-coupon">🎫 折價券</span>
         <span class="tag tag-cat">${CAT_ICONS[item.category]||''} ${item.category}</span>
         ${item.min_spend ? `<span class="tag" style="background:#fff7ed;color:#c2410c">滿 ${item.min_spend} 元</span>` : ''}
+        ${item.store_lat ? `<span class="tag tag-loc">📍 位置已記錄</span>` : ''}
         ${status === 'used' ? '<span class="tag tag-used">已使用</span>' : ''}
-        ${status === 'redeemable' ? '<span class="tag tag-ok">🎉 達標</span>' : ''}
       </div>
       ${item.conditions ? `<div class="conditions-text">📋 ${item.conditions}</div>` : ''}
       <div class="eb ${exp.cls}">${exp.text}</div>
@@ -726,12 +860,14 @@ function fullCard(item) {
       <div class="coupon-tags">
         <span class="tag tag-stamp">🎯 集點卡</span>
         <span class="tag tag-cat">${CAT_ICONS[item.category]||''} ${item.category}</span>
+        ${item.store_lat ? `<span class="tag tag-loc">📍 位置已記錄</span>` : ''}
         ${status === 'used' ? '<span class="tag tag-used">已兌換</span>' : ''}
         ${status === 'redeemable' ? '<span class="tag tag-ok">🎉 可兌換</span>' : ''}
       </div>
       <div class="stamp-bar-bg" style="margin-top:8px"><div class="stamp-bar-fill" style="width:${pct}%"></div></div>
       <div class="stamp-counts"><span>${item.current_stamps} 點</span><span>目標 ${item.total_stamps} 點</span></div>
       ${item.reward ? `<div class="stamp-reward">🎁 ${item.reward}</div>` : ''}
+      ${item.physical_card_count > 0 ? `<div class="physical-card-info">💳 實體卡 ${item.physical_card_count} 張${item.physical_card_locations ? '　' + item.physical_card_locations : ''}</div>` : ''}
       <div class="eb ${exp.cls}" style="margin-top:4px">${exp.text}</div>
       ${item.notes ? `<div style="font-size:12px;color:var(--gray-400);margin-top:4px">${item.notes}</div>` : ''}
       <div class="btn-row">
@@ -748,8 +884,38 @@ function fullCard(item) {
         <button class="btn-icon del" onclick="deleteItem('${item.id}')">🗑️</button>
       </div>
     </div>
+    ${item.photo_url ? `<img src="${item.photo_url}" class="coupon-photo">` : ''}
     ${body}
   </div>`
+}
+
+// ── 照片 ──
+function onAddPhotoSelected(input) {
+  const file = input.files[0]; if (!file) return
+  addPhotoFile = file
+  const url = URL.createObjectURL(file)
+  document.getElementById('add-photo-preview').innerHTML = `<img src="${url}" style="width:100%;height:100%;object-fit:cover;border-radius:8px">`
+  document.getElementById('btn-clear-add-photo').style.display = 'block'
+}
+function clearAddPhoto() {
+  addPhotoFile = null
+  document.getElementById('add-photo-input').value = ''
+  document.getElementById('add-photo-preview').innerHTML = '<div class="photo-placeholder">📷<br>點擊拍照或選照片</div>'
+  document.getElementById('btn-clear-add-photo').style.display = 'none'
+}
+function onEditPhotoSelected(input) {
+  const file = input.files[0]; if (!file) return
+  editPhotoFile = file
+  const url = URL.createObjectURL(file)
+  document.getElementById('edit-photo-preview').innerHTML = `<img src="${url}" style="width:80px;height:80px;object-fit:cover;border-radius:10px">`
+}
+async function uploadPhoto(file) {
+  const ext = file.name.split('.').pop() || 'jpg'
+  const path = `${currentUser.id}/${Date.now()}.${ext}`
+  const { error } = await db.storage.from('coupon-photos').upload(path, file, { upsert: true })
+  if (error) { console.error('上傳失敗:', error); return null }
+  const { data } = db.storage.from('coupon-photos').getPublicUrl(path)
+  return data.publicUrl
 }
 
 // ── Add ──
@@ -768,12 +934,17 @@ async function addCoupon() {
   const btn = document.getElementById('add-btn')
   btn.disabled = true; btn.textContent = '新增中...'
 
+  let photo_url = null
+  if (addPhotoFile) { photo_url = await uploadPhoto(addPhotoFile) }
+
   const data = {
     household_id: currentHousehold.id, type: addType, store,
     category: document.getElementById('add-cat').value,
     expiry_date: document.getElementById('add-expiry').value || null,
     notes: document.getElementById('add-notes').value.trim(),
-    added_by: currentUser.id, status: 'active'
+    added_by: currentUser.id, status: 'active',
+    photo_url,
+    store_lat: addLat, store_lng: addLng
   }
   if (addType === 'coupon') {
     data.discount_info = document.getElementById('add-discount').value.trim()
@@ -783,12 +954,15 @@ async function addCoupon() {
     data.current_stamps = parseInt(document.getElementById('add-current-stamps').value) || 0
     data.total_stamps = parseInt(document.getElementById('add-total-stamps').value) || 10
     data.reward = document.getElementById('add-reward').value.trim()
+    data.physical_card_count = parseInt(document.getElementById('add-physical-count').value) || 0
+    data.physical_card_locations = document.getElementById('add-physical-locations').value.trim()
   }
 
   const { error } = await db.from('coupons').insert(data)
   btn.disabled = false; btn.textContent = '新增'
   if (error) { alert('新增失敗：' + error.message); return }
 
+  // Reset
   document.getElementById('add-store').value = ''
   document.getElementById('add-discount').value = ''
   document.getElementById('add-conditions').value = ''
@@ -796,8 +970,13 @@ async function addCoupon() {
   document.getElementById('add-current-stamps').value = '0'
   document.getElementById('add-total-stamps').value = '10'
   document.getElementById('add-reward').value = ''
+  document.getElementById('add-physical-count').value = '1'
+  document.getElementById('add-physical-locations').value = ''
   document.getElementById('add-expiry').value = ''
   document.getElementById('add-notes').value = ''
+  document.getElementById('add-location-status').innerHTML = '尚未記錄'
+  addLat = null; addLng = null
+  clearAddPhoto()
   await loadCoupons()
   alert('✅ 已新增！')
 }
@@ -807,24 +986,20 @@ async function deleteItem(id) {
   if (!confirm('確定要刪除？')) return
   await db.from('coupons').delete().eq('id', id)
   await loadCoupons()
-  const listActive = document.getElementById('section-list').classList.contains('active')
-  if (listActive) { renderList(); buildFilterOptions() }
+  if (document.getElementById('section-list').classList.contains('active')) { renderList(); buildFilterOptions() }
 }
 
 async function markUsed(id) {
   await db.from('coupons').update({ status: 'used' }).eq('id', id)
   await loadCoupons()
-  const listActive = document.getElementById('section-list').classList.contains('active')
-  if (listActive) renderList()
+  if (document.getElementById('section-list').classList.contains('active')) renderList()
 }
 
 async function addStamp(id) {
   const item = coupons.find(c => c.id === id); if (!item) return
-  const newStamps = item.current_stamps + 1
-  await db.from('coupons').update({ current_stamps: newStamps }).eq('id', id)
+  await db.from('coupons').update({ current_stamps: item.current_stamps + 1 }).eq('id', id)
   await loadCoupons()
-  const listActive = document.getElementById('section-list').classList.contains('active')
-  if (listActive) renderList()
+  if (document.getElementById('section-list').classList.contains('active')) renderList()
 }
 
 // ── Edit ──
@@ -836,6 +1011,9 @@ function openEdit(id) {
   document.getElementById('edit-cat').value = item.category
   document.getElementById('edit-expiry').value = item.expiry_date || ''
   document.getElementById('edit-notes').value = item.notes || ''
+  editPhotoFile = null
+  editLat = item.store_lat || null
+  editLng = item.store_lng || null
 
   const isCoupon = item.type === 'coupon'
   document.getElementById('edit-coupon-fields').style.display = isCoupon ? 'block' : 'none'
@@ -848,7 +1026,18 @@ function openEdit(id) {
     document.getElementById('edit-current-stamps').value = item.current_stamps || 0
     document.getElementById('edit-total-stamps').value = item.total_stamps || 10
     document.getElementById('edit-reward').value = item.reward || ''
+    document.getElementById('edit-physical-count').value = item.physical_card_count || 0
+    document.getElementById('edit-physical-locations').value = item.physical_card_locations || ''
   }
+
+  document.getElementById('edit-photo-preview').innerHTML = item.photo_url
+    ? `<img src="${item.photo_url}" style="width:80px;height:80px;object-fit:cover;border-radius:10px">`
+    : '<span style="font-size:12px;color:var(--gray-400)">尚無照片</span>'
+
+  document.getElementById('edit-location-status').innerHTML = item.store_lat
+    ? `<span style="color:var(--success)">✅ 位置已記錄</span>`
+    : '尚未記錄'
+
   document.getElementById('edit-modal').classList.add('open')
 }
 
@@ -857,11 +1046,16 @@ function closeModal() { document.getElementById('edit-modal').classList.remove('
 async function saveEdit() {
   const id = document.getElementById('edit-id').value
   const type = document.getElementById('edit-type').value
+  let photo_url = coupons.find(c => c.id === id)?.photo_url || null
+  if (editPhotoFile) { const uploaded = await uploadPhoto(editPhotoFile); if (uploaded) photo_url = uploaded }
+
   const updates = {
     store: document.getElementById('edit-store').value.trim(),
     category: document.getElementById('edit-cat').value,
     expiry_date: document.getElementById('edit-expiry').value || null,
-    notes: document.getElementById('edit-notes').value.trim()
+    notes: document.getElementById('edit-notes').value.trim(),
+    photo_url,
+    store_lat: editLat, store_lng: editLng
   }
   if (type === 'coupon') {
     updates.discount_info = document.getElementById('edit-discount').value.trim()
@@ -871,12 +1065,15 @@ async function saveEdit() {
     updates.current_stamps = parseInt(document.getElementById('edit-current-stamps').value) || 0
     updates.total_stamps = parseInt(document.getElementById('edit-total-stamps').value) || 10
     updates.reward = document.getElementById('edit-reward').value.trim()
+    updates.physical_card_count = parseInt(document.getElementById('edit-physical-count').value) || 0
+    updates.physical_card_locations = document.getElementById('edit-physical-locations').value.trim()
   }
   const { error } = await db.from('coupons').update(updates).eq('id', id)
   if (error) { alert('儲存失敗：' + error.message); return }
+  editPhotoFile = null; editLat = null; editLng = null
   closeModal()
   await loadCoupons()
-  renderList()
+  if (document.getElementById('section-list').classList.contains('active')) renderList()
 }
 
 // ── Settings ──
